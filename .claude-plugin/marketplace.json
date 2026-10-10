@@ -1,0 +1,17 @@
+{
+  "name": "spor",
+  "description": "spor, the trail Claude leaves in the Claude Code transcript",
+  "owner": {
+    "name": "Mark Medum Bundgaard",
+    "url": "https://github.com/mmedum"
+  },
+  "plugins": [
+    {
+      "name": "spor",
+      "source": "./",
+      "description": "Puts back what Claude Code folds away: the files Claude read and the commands it searched with, and what each turn did",
+      "category": "productivity",
+      "tags": ["transcript", "tool-calls", "tui"]
+    }
+  ]
+}
