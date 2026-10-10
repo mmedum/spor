@@ -24,7 +24,7 @@ Third-party marketplaces don't update on their own. To update, run `claude plugi
 
 ## What it shows
 
-- **Under a folded run:** each file read, as a path relative to the session's folder; each shell command by its first line (a heredoc's body is left out, marked `…`); a fetched address, a web search's question, or any other call by its tool. Each name shows once, in the order Claude first used it, and one that failed every time is marked `✗`. Names are never shortened: when they don't fit on one line, they wrap onto more dim lines, and a name wider than a line breaks at a space or after a slash. A long run shows three lines of names, then a line of its own, `… +N more (ctrl+o to expand)`, with N the names left out, as Claude Code itself folds long output; when one more line would show them all, it shows them all. ctrl+o is Claude Code's default key; a mod can't read a rebound one.
+- **Under a folded run:** each file read, as a path relative to the session's folder; each shell command by its first line, past any blank lines and comments before it (a heredoc's body is left out, marked `…`); a fetched address, a web search's question, or any other call by its tool. Each name shows once, in the order Claude first used it, and one that failed every time is marked `✗`. Names are never shortened: when they don't fit on one line, they wrap onto more dim lines, and a name wider than a line breaks at a space or after a slash. A long run shows three lines of names, then a line of its own, `… +N more (ctrl+o to expand)`, with N the names left out, as Claude Code itself folds long output; when one more line would show them all, it shows them all, and its first name always shows whole, however many lines it takes. ctrl+o is Claude Code's default key; a mod can't read a rebound one.
 - **Under a turn's closing line:** the files the turn changed, by name, with the lines added and removed, then how many files it read and how many shell commands it ran. Only the main conversation counts; a subagent's calls belong to its own transcript. An edit held for review, a refused call and a failed one aren't counted. A turn that touched nothing gets no line. A turn that changed many files is capped like the names, its last line carrying the rest, as in `… +3 more (+16 −8) · read 2 · ran 1`; the counts always show.
 
 The tallies cover the turns of this session since spor loaded. After `/clear` or `/resume`, older turns' closing lines show as Claude Code draws them.
@@ -52,6 +52,7 @@ Mods run with your permissions, so here is everything spor touches. `claude plug
 - The main conversation's tool calls as they finish, through the mod API: the tool, its input and its result.
 - The session's folder (`$.session.cwd`), to write paths relative to it.
 - What you type after `/spor`.
+- The kind and id of each row added to the conversation, to find the one that closes a turn and put the turn's tally under it. spor never reads a row's content.
 
 ### What it runs and writes
 
@@ -61,6 +62,7 @@ Nothing. spor runs no programs, reads no files, writes no files, makes no networ
 
 - Two kinds of transcript rows: a folded run gets a line of names under Claude Code's own line, and a turn's closing line gets the tally under it. An unfolded run (ctrl+o, `--verbose`) is left as Claude Code draws it.
 - Its hook on tool calls only counts what passes, after the call has run, and hands the call and its result on unchanged. Its hooks on a turn's start and end only note the turn.
+- Its hook on rows added to the conversation only notes the id of the row that closes a turn, and hands every row on unchanged.
 - It adds the `/spor` command, which answers with a dim line in the transcript. Its hook on a session restarting (`/clear`, `/resume`, `/branch`) only puts the switch back as you left it.
 
 ## Privacy

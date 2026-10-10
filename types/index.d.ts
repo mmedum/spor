@@ -19,16 +19,24 @@ export type Summary = {
   counts: string[]
 }
 
+// What each finished turn did, oldest first, by the id of the row that
+// closes it, which its closing line is drawn with; and while a turn
+// completes, whichever of its summary and that row came first, waiting for
+// the other (null while nothing waits).
+export type Tallies = {
+  kept: Record<string, Summary>
+  summary: Summary | null
+  row: string | null
+}
+
 declare module 'claude-code' {
   interface PluginState {
     spor: {
       // The turn of the main conversation running now, counted as it goes;
       // null between turns.
       turn: Tally | null
-      // What each finished turn did, oldest first, by the turn's duration
-      // in milliseconds ("41000ms"): the one number turn.complete and the
-      // turn's closing line both carry.
-      tallies: Record<string, Summary>
+      // What the finished turns did, and a finished turn on its way there.
+      tallies: Tallies
       // Whether spor draws its lines; /spor off hides them for the session.
       isShown: boolean
     }

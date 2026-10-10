@@ -30,9 +30,14 @@ export function nameOf(call: ToolGroupCall, folder: string): string {
 
 // A command on one line: its first, with the lines a backslash continues
 // joined on; a heredoc's body or the rest of a script after it is left out,
-// marked "…".
+// marked "…". Blank lines and comments before it are passed over, unless
+// the script is nothing else.
 export function commandLine(command: string): string {
-  const [first = '', ...rest] = command.replace(/\\\r?\n/g, ' ').split('\n')
+  const lines = command.replace(/\\\r?\n/g, ' ').split('\n')
+  const isText = (line: string) => line.trim() !== ''
+  const isCommand = (line: string) => isText(line) && !line.trim().startsWith('#')
+  const start = lines.some(isCommand) ? lines.findIndex(isCommand) : Math.max(lines.findIndex(isText), 0)
+  const [first = '', ...rest] = lines.slice(start)
   const line = first.replace(/\s+/g, ' ').trim()
   return rest.some(more => more.trim() !== '') ? `${line} …` : line
 }

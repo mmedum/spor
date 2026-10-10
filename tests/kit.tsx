@@ -8,8 +8,8 @@ export const FOLDER = '/home/demo/app'
 
 // Beneath spor: the session's folder, and Claude Code's own drawing of a
 // folded run and of a turn's closing line, one line of text each.
-export function engine(on: On) {
-  on('session.cwd', () => ({ value: FOLDER }))
+export function engine(on: On, folder = FOLDER) {
+  on('session.cwd', () => ({ value: folder }))
   on('ui.render', { component: 'ToolGroup' }, ($, e) => {
     const { Text } = $.ui.resolve(e)
     return <Text>{`Read ${e.props.calls.length} files`}</Text>
@@ -37,12 +37,17 @@ export function group($: Engine, calls: ToolGroupCall[], { isExpanded = false, c
   })
 }
 
+// The id of the row that closes a turn, which its closing line is drawn
+// with.
+export const closingRow = (turnId: string) => `closing-${turnId}`
+
 // A turn's closing line, in a terminal `columns` wide.
-export function closingLine($: Engine, durationMs: number, { columns = 80 } = {}) {
+export function closingLine($: Engine, turnId: string, durationMs: number, { columns = 80 } = {}) {
   return $.ui.mount({
     plugin: 'spor',
     surface: 'terminal',
     component: 'TurnDuration',
+    requestId: closingRow(turnId),
     props: { word: 'Baked', durationMs },
     viewport: { columns, rows: 40 },
   })
@@ -86,10 +91,20 @@ export const read = ($: Engine, path: string, agentId?: string) =>
 export const edit = ($: Engine, path: string) =>
   $.tool.call({ tool: 'Edit', file_path: `/home/demo/app/${path}`, old_string: 'old', new_string: 'new\nmore' })
 export const run = ($: Engine, command: string) => $.tool.call({ tool: 'Bash', command })
+// The row Claude Code adds to the conversation to close a turn, and another
+// notice, by its kind.
+export const closes = ($: Engine, turnId: string) => notice($, closingRow(turnId), 'turn_duration')
+export const notice = ($: Engine, uuid: string, name: string) =>
+  $.session.append({ door: 'notice', origin: { kind: 'engine' }, uuid, message: { type: 'system', name, content: [] } })
+
+// A turn of the main conversation, then the row that closes it. Claude Code
+// adds that row as the turn completes, before spor's hook on it is done or
+// after.
 export const turn = async ($: Engine, turnId: string, durationMs: number, calls: () => Promise<unknown>) => {
   await $.turn.start({ text: '', turnId })
   await calls()
   await $.turn.complete({ answer: '', durationMs, isAborted: false, turnId, reason: 'answer' })
+  await closes($, turnId)
 }
 
 // A session started as Claude Code starts one, and the dim lines spor logs

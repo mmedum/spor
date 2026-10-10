@@ -4,23 +4,38 @@
 
 import type { Register } from 'claude-code'
 import { atom, read, update } from 'claude-code'
+import type { Summary, Tallies } from '../types'
 import { namesLines, namesOf } from './names'
 import { EMPTY, counted, summaryLines, summaryOf } from './tally'
 import { cells } from './text'
 
 const turn = atom({ plugin: 'spor', key: 'turn' } as const, null)
-const tallies = atom({ plugin: 'spor', key: 'tallies' } as const, {})
+const tallies = atom({ plugin: 'spor', key: 'tallies' } as const, { kept: {}, summary: null, row: null })
 const isShown = atom({ plugin: 'spor', key: 'isShown' } as const, true)
 
 // The finished turns' tallies kept, the newest; older closing lines draw
 // as Claude Code draws them.
 const TALLIES_KEPT = 200
 
-// A turn's key among the tallies. Not a bare number: an object lists keys
-// that read as numbers in numeric order, not in the order they were added,
-// and the oldest tallies must be the ones dropped.
-function keyOf(durationMs: number): string {
-  return `${durationMs}ms`
+// A turn's summary and the row that closes it arrive in either order: the
+// second to come keeps the summary under the row's id, the newest kept.
+// Each of these is one write, so the two can't miss each other.
+function withSummary(now: Tallies, summary: Summary | null): Tallies {
+  if (now.row === null) {
+    return { ...now, summary }
+  }
+
+  return { kept: summary === null ? now.kept : kept(now.kept, now.row, summary), summary: null, row: null }
+}
+function withRow(now: Tallies, row: string): Tallies {
+  if (now.summary === null) {
+    return { ...now, row }
+  }
+
+  return { kept: kept(now.kept, row, now.summary), summary: null, row: null }
+}
+function kept(all: Tallies['kept'], row: string, summary: Summary): Tallies['kept'] {
+  return Object.fromEntries([...Object.entries(all), [row, summary]].slice(-TALLIES_KEPT))
 }
 
 // How spor's lines start, as a tool's result does under its row, and how
@@ -111,6 +126,7 @@ export const register: Register = on => {
   // The main conversation's turns: a subagent's run raises no turn.start.
   on('turn.start', async ($, e, next) => {
     await update($, turn, () => EMPTY)
+    await update($, tallies, now => ({ ...now, summary: null, row: null }))
     return next(e)
   })
 
@@ -130,16 +146,25 @@ export const register: Register = on => {
     return ran
   })
 
-  // The tally is kept under the turn's duration, which its closing line
-  // carries too.
+  // A finished turn's tally goes under the row that closes it, which Claude
+  // Code adds as the turn completes, before this or after.
   on('turn.complete', async ($, e, next) => {
     if (e.agentId === undefined) {
       const done = await read($, turn)
       const summary = done === null ? null : summaryOf(done, await $.session.cwd().catch(() => ''))
-      if (summary !== null) {
-        await update($, tallies, all => Object.fromEntries([...Object.entries(all), [keyOf(e.durationMs), summary]].slice(-TALLIES_KEPT)))
-      }
+      await update($, tallies, now => withSummary(now, summary))
       await update($, turn, () => null)
+    }
+
+    return next(e)
+  })
+
+  // The row that closes a turn of the main conversation, whose id its
+  // closing line is drawn with. Every row passes on unchanged, its content
+  // unread.
+  on('session.append', async ($, e, next) => {
+    if (e.agentId === undefined && e.message.type === 'system' && e.message.name === 'turn_duration') {
+      await update($, tallies, now => withRow(now, e.uuid))
     }
 
     return next(e)
@@ -149,7 +174,7 @@ export const register: Register = on => {
   // like the names. Beside it the tally would wrap badly: Claude
   // Code's line takes more room than its text.
   on('ui.render', { component: 'TurnDuration' }, async ($, e, next) => {
-    const summary = (await read($, tallies))[keyOf(e.props.durationMs)]
+    const summary = (await read($, tallies)).kept[e.requestId]
     const drawn = await next(e)
     if (summary === undefined || !(await read($, isShown))) {
       return drawn

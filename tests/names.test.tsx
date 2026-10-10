@@ -157,4 +157,89 @@ describe('folded runs', () => {
 
     expect(await lines(ui)).toEqual(['Read 3 files', '  ⎿  code.claude.com/docs/en/plugins/mods · "claude code mods" · lookup'])
   })
+
+  test('passes over blank lines and comments before a command, unless the script is nothing else', async ($, on) => {
+    engine(on)
+    const ui = await group($, [
+      call('Bash', { command: '# build it\nnpm run build' }),
+      call('Bash', { command: '\n\nnpm test' }),
+      call('Bash', { command: '\n#!/bin/sh\n# nothing to run' }),
+    ])
+
+    expect(await lines(ui)).toEqual(['Read 3 files', '  ⎿  npm run build · npm test · #!/bin/sh …'])
+  })
+
+  // An escaped bug: a name alone that took more than four rows was hidden
+  // behind "… +1 more".
+  test('shows a name that takes more than four rows whole, even alone', async ($, on) => {
+    engine(on)
+    const command = 'echo one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen'
+    // 25 columns less the lead's 5 leave 20 cells.
+    const ui = await group($, [call('Bash', { command })], { columns: 25 })
+
+    expect(await lines(ui)).toEqual([
+      'Read 1 files',
+      '  ⎿  echo one two three',
+      '     four five six seven',
+      '     eight nine ten',
+      '     eleven twelve',
+      '     thirteen fourteen',
+      '     fifteen sixteen',
+    ])
+  })
+
+  test('measures Chinese, Japanese and Korean characters and emoji two cells wide', async ($, on) => {
+    engine(on)
+    // 14 and 24 cells, 41 joined, in 40 cells; counted in code points they
+    // would be 37 and fit on one line.
+    const ui = await group($, [call('Read', { file_path: '/home/demo/app/docs/設計書.md' }), call('Bash', { command: 'git commit -m "✨ ready"' })], {
+      columns: 45,
+    })
+
+    expect(await lines(ui)).toEqual(['Read 2 files', '  ⎿  docs/設計書.md', '     git commit -m "✨ ready"'])
+  })
+
+  test('breaks a name of wide characters by the cells it takes', async ($, on) => {
+    engine(on)
+    // In 16 cells: "docs/設計書/" takes 12, and "docs/設計書/仕様/" 17, one past the
+    // line; counted in code points it would be 12 and fit.
+    const ui = await group($, [call('Read', { file_path: '/home/demo/app/docs/設計書/仕様/一覧と設計.md' })], { columns: 21 })
+
+    expect(await lines(ui)).toEqual(['Read 1 files', '  ⎿  docs/設計書/', '     仕様/', '     一覧と設計.md'])
+  })
+
+  test('counts an accent written apart from its letter as no cell of its own', async ($, on) => {
+    engine(on)
+    // "docs/å.md" with å as a and a combining ring: 9 cells, 20 joined, in
+    // 20 cells; counted in code points they would be 21 and wrap.
+    const ui = await group(
+      $,
+      [call('Read', { file_path: '/home/demo/app/docs/a\u030a.md' }), call('Read', { file_path: '/home/demo/app/src/a.ts' })],
+      {
+        columns: 25,
+      },
+    )
+
+    expect(await lines(ui)).toEqual(['Read 2 files', '  ⎿  docs/a\u030a.md · src/a.ts'])
+  })
+
+  test('writes Windows paths relative to the folder and breaks them after a backslash', async ($, on) => {
+    engine(on, 'C:\\Users\\demo\\app')
+    const ui = await group(
+      $,
+      [
+        call('Read', { file_path: 'C:\\Users\\demo\\app\\src\\api.ts' }),
+        call('Read', { file_path: 'C:\\Users\\demo\\other\\a-rather-long-folder\\file.ts' }),
+      ],
+      { columns: 30 },
+    )
+
+    expect(await lines(ui)).toEqual([
+      'Read 2 files',
+      '  ⎿  src\\api.ts',
+      '     C:\\Users\\demo\\other\\',
+      '     a-rather-long-folder\\',
+      '     file.ts',
+    ])
+  })
 })

@@ -1,6 +1,6 @@
 {
   "name": "spor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Puts back what Claude Code folds away: the files Claude read and the commands it searched with, under each folded run, and what each turn did on its closing line",
   "author": {
     "name": "Mark Medum Bundgaard",

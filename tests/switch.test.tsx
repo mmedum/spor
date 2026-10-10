@@ -8,7 +8,7 @@ describe('/spor', () => {
     const logged = await started($, on)
     await turn($, 't1', 9_000, () => read($, 'src/a.ts'))
     const run = await group($, [call('Read', { file_path: '/home/demo/app/src/a.ts' })])
-    const closing = await closingLine($, 9_000)
+    const closing = await closingLine($, 't1', 9_000)
 
     await spor($, 'off')
     expect(await lines(run)).toEqual(['Read 1 files'])
@@ -84,7 +84,7 @@ describe('/spor', () => {
     await turn($, 't1', 9_000, () => read($, 'src/a.ts'))
     await spor($, 'on')
 
-    expect(await lines(await closingLine($, 9_000))).toEqual(['✻ Baked for 9s', '  ⎿  read 1'])
+    expect(await lines(await closingLine($, 't1', 9_000))).toEqual(['✻ Baked for 9s', '  ⎿  read 1'])
   })
 
   test('stays off after /clear, /resume and /branch', async ($, on) => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'claude-code/testing'
-import { closingLine, edit, engine, lines, read, run, tools, turn } from './kit'
+import { closes, closingLine, edit, engine, lines, notice, read, run, tools, turn } from './kit'
 
 describe("under a turn's closing line", () => {
   test('names the files the turn changed with the lines added and removed, then counts the files read and commands run', async ($, on) => {
@@ -15,7 +15,10 @@ describe("under a turn's closing line", () => {
       await run($, 'git status')
     })
 
-    expect(await lines(await closingLine($, 41_000))).toEqual(['✻ Baked for 41s', '  ⎿  changed src/a.ts · src/new.ts (+5 −1) · read 2 · ran 2'])
+    expect(await lines(await closingLine($, 't1', 41_000))).toEqual([
+      '✻ Baked for 41s',
+      '  ⎿  changed src/a.ts · src/new.ts (+5 −1) · read 2 · ran 2',
+    ])
   })
 
   test('wraps a turn that changed many files onto more lines, a file outside the folder named whole', async ($, on) => {
@@ -30,7 +33,7 @@ describe("under a turn's closing line", () => {
     })
 
     // 60 columns less the lead's 5 leave 55 cells.
-    expect(await lines(await closingLine($, 20_000, { columns: 60 }))).toEqual([
+    expect(await lines(await closingLine($, 't1', 20_000, { columns: 60 }))).toEqual([
       '✻ Baked for 20s',
       '  ⎿  changed src/server/handlers/authentication.ts',
       '     src/server/handlers/authorization.ts',
@@ -51,7 +54,7 @@ describe("under a turn's closing line", () => {
       await run($, 'npm test')
     })
 
-    expect(await lines(await closingLine($, 25_000, { columns: 60 }))).toEqual([
+    expect(await lines(await closingLine($, 't1', 25_000, { columns: 60 }))).toEqual([
       '✻ Baked for 25s',
       '  ⎿  changed src/server/handlers/h1.ts',
       '     src/server/handlers/h2.ts · src/server/handlers/h3.ts',
@@ -69,7 +72,7 @@ describe("under a turn's closing line", () => {
       await run($, 'false')
     })
 
-    expect(await lines(await closingLine($, 12_000))).toEqual(['✻ Baked for 12s'])
+    expect(await lines(await closingLine($, 't1', 12_000))).toEqual(['✻ Baked for 12s'])
   })
 
   test('puts each tally on its own turn, and leaves a line it has no tally for as Claude Code draws it', async ($, on) => {
@@ -78,9 +81,9 @@ describe("under a turn's closing line", () => {
     await turn($, 't1', 9_000, () => read($, 'src/a.ts'))
     await turn($, 't2', 30_000, () => run($, 'npm test'))
 
-    expect(await lines(await closingLine($, 9_000))).toEqual(['✻ Baked for 9s', '  ⎿  read 1'])
-    expect(await lines(await closingLine($, 30_000))).toEqual(['✻ Baked for 30s', '  ⎿  ran 1'])
-    expect(await lines(await closingLine($, 5_000))).toEqual(['✻ Baked for 5s'])
+    expect(await lines(await closingLine($, 't1', 9_000))).toEqual(['✻ Baked for 9s', '  ⎿  read 1'])
+    expect(await lines(await closingLine($, 't2', 30_000))).toEqual(['✻ Baked for 30s', '  ⎿  ran 1'])
+    expect(await lines(await closingLine($, 't3', 5_000))).toEqual(['✻ Baked for 5s'])
   })
 
   // An escaped bug: kept by duration, the longest turns stayed and the
@@ -93,8 +96,74 @@ describe("under a turn's closing line", () => {
       await turn($, `t${n}`, (202 - n) * 1000, () => run($, 'true'))
     }
 
-    expect(await lines(await closingLine($, 201_000))).toEqual(['✻ Baked for 201s'])
-    expect(await lines(await closingLine($, 200_000))).toEqual(['✻ Baked for 200s', '  ⎿  ran 1'])
-    expect(await lines(await closingLine($, 1000))).toEqual(['✻ Baked for 1s', '  ⎿  ran 1'])
+    expect(await lines(await closingLine($, 't1', 201_000))).toEqual(['✻ Baked for 201s'])
+    expect(await lines(await closingLine($, 't2', 200_000))).toEqual(['✻ Baked for 200s', '  ⎿  ran 1'])
+    expect(await lines(await closingLine($, 't201', 1000))).toEqual(['✻ Baked for 1s', '  ⎿  ran 1'])
+  })
+
+  // An escaped bug: kept by duration, two turns that took as long shared
+  // one tally.
+  test('keeps two turns that took as long apart', async ($, on) => {
+    engine(on)
+    tools(on)
+    await turn($, 't1', 9_000, () => read($, 'src/a.ts'))
+    await turn($, 't2', 9_000, () => run($, 'npm test'))
+
+    expect(await lines(await closingLine($, 't1', 9_000))).toEqual(['✻ Baked for 9s', '  ⎿  read 1'])
+    expect(await lines(await closingLine($, 't2', 9_000))).toEqual(['✻ Baked for 9s', '  ⎿  ran 1'])
+  })
+
+  test('puts the tally on the row that closes the turn, past other notices added before it', async ($, on) => {
+    engine(on)
+    tools(on)
+    await $.turn.start({ text: '', turnId: 't1' })
+    await read($, 'src/a.ts')
+    await $.turn.complete({ answer: '', durationMs: 9_000, isAborted: false, turnId: 't1', reason: 'answer' })
+    await notice($, 'hooks-ran', 'stop_hook_summary')
+    await closes($, 't1')
+
+    expect(await lines(await closingLine($, 't1', 9_000))).toEqual(['✻ Baked for 9s', '  ⎿  read 1'])
+  })
+
+  test("gives a turn's tally to the one row that closes it", async ($, on) => {
+    engine(on)
+    tools(on)
+    await turn($, 't1', 9_000, () => read($, 'src/a.ts'))
+    await closes($, 't2')
+
+    expect(await lines(await closingLine($, 't1', 9_000))).toEqual(['✻ Baked for 9s', '  ⎿  read 1'])
+    expect(await lines(await closingLine($, 't2', 4_000))).toEqual(['✻ Baked for 4s'])
+  })
+
+  // An escaped bug: Claude Code added the closing row before spor's hook on
+  // the turn's end was done, and each tally went under the next turn's line.
+  test('keeps each tally under its own line when the closing row comes before the turn is done', async ($, on) => {
+    engine(on)
+    tools(on)
+    for (const [turnId, calls] of [
+      ['t1', () => read($, 'src/a.ts')],
+      ['t2', () => run($, 'npm test')],
+    ] as const) {
+      await $.turn.start({ text: '', turnId })
+      await calls()
+      await closes($, turnId)
+      await $.turn.complete({ answer: '', durationMs: 9_000, isAborted: false, turnId, reason: 'answer' })
+    }
+
+    expect(await lines(await closingLine($, 't1', 9_000))).toEqual(['✻ Baked for 9s', '  ⎿  read 1'])
+    expect(await lines(await closingLine($, 't2', 9_000))).toEqual(['✻ Baked for 9s', '  ⎿  ran 1'])
+  })
+
+  test('leaves no tally waiting from a turn that had no closing row', async ($, on) => {
+    engine(on)
+    tools(on)
+    await $.turn.start({ text: '', turnId: 't1' })
+    await read($, 'src/a.ts')
+    await $.turn.complete({ answer: '', durationMs: 9_000, isAborted: true, turnId: 't1', reason: 'answer' })
+    await $.turn.start({ text: '', turnId: 't2' })
+    await closes($, 't2')
+    await $.turn.complete({ answer: '', durationMs: 4_000, isAborted: false, turnId: 't2', reason: 'answer' })
+
+    expect(await lines(await closingLine($, 't2', 4_000))).toEqual(['✻ Baked for 4s'])
   })
 })
