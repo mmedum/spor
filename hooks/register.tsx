@@ -54,7 +54,7 @@ function answerTo(asked: string, was: boolean): string {
   switch (asked) {
     case '':
       return was
-        ? "on. The dim lines under folded runs and under each turn's closing line are spor's. /spor off hides them."
+        ? "on. The lines under folded runs and under each turn's closing line are spor's. /spor off hides them."
         : 'off for this session. /spor on shows its lines again.'
     case 'on':
       return was ? 'already on. /spor off hides its lines.' : 'on: its lines show again. /spor off hides them.'

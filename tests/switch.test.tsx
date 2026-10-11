@@ -34,7 +34,7 @@ describe('/spor', () => {
     await spor($)
     expect(await lines(run)).toEqual(['Read 1 files'])
     expect(logged).toEqual([
-      "on. The dim lines under folded runs and under each turn's closing line are spor's. /spor off hides them.",
+      "on. The lines under folded runs and under each turn's closing line are spor's. /spor off hides them.",
       'off for this session: its lines are hidden. /spor on shows them again.',
       'off for this session. /spor on shows its lines again.',
     ])

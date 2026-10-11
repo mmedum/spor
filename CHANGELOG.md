@@ -4,6 +4,14 @@ Notable changes to spor. The format follows [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-11
+
+### Fixed
+
+- `/spor` and the README no longer call spor's lines dim, which they aren't once Names color or Tally color sets another color; only the screenshot's description, of the default look, still does.
+- A short hex color, such as `#f80`, now goes to Claude Code as `#ff8800`, as an `rgb()` color does, so it no longer depends on how Claude Code reads short hex.
+- Only color names, `ansi:` names and `ansi256()` from 0 to 15 follow the terminal's own palette. The README, and the notes for 0.2.0, said every `ansi256()` color did.
+
 ## [0.2.0] - 2026-10-11
 
 ### Added
@@ -29,7 +37,8 @@ Notable changes to spor. The format follows [Keep a Changelog](https://keepachan
 - Under each turn's closing line, what the turn did: the files it changed, by name, with the lines added and removed, and how many files it read and commands it ran, capped the same way.
 - `/spor` says whether spor's lines are on. `/spor off` hides them, those already drawn too, and `/spor on` shows them again; the switch lasts for the session.
 
-[Unreleased]: https://github.com/mmedum/spor/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mmedum/spor/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/mmedum/spor/releases/tag/v0.2.1
 [0.2.0]: https://github.com/mmedum/spor/releases/tag/v0.2.0
 [0.1.1]: https://github.com/mmedum/spor/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mmedum/spor/releases/tag/v0.1.0
