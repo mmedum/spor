@@ -6,6 +6,7 @@ import type { Register } from 'claude-code'
 import { atom, read, update } from 'claude-code'
 import type { Summary, Tallies } from '../types'
 import { namesLines, namesOf } from './names'
+import { colorOf } from './paint'
 import { EMPTY, counted, summaryLines, summaryOf } from './tally'
 import { cells } from './text'
 
@@ -64,7 +65,12 @@ function answerTo(asked: string, was: boolean): string {
   }
 }
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
+  // The Names color and Tally color options, by default Claude Code's own
+  // color for hints and timestamps.
+  const namesColor = colorOf(options.namesColor, 'inactive')
+  const tallyColor = colorOf(options.tallyColor, 'inactive')
+
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'spor',
@@ -114,7 +120,7 @@ export const register: Register = on => {
       <Box flexDirection="column">
         {drawn}
         {namesLines(names, room).map((line, i) => (
-          <Text dimColor>
+          <Text color={namesColor}>
             {i === 0 ? LEAD : ON}
             {line}
           </Text>
@@ -186,7 +192,7 @@ export const register: Register = on => {
       <Box flexDirection="column">
         {drawn}
         {summaryLines(summary, room).map((line, i) => (
-          <Text dimColor>
+          <Text color={tallyColor}>
             {i === 0 ? LEAD : ON}
             {line}
           </Text>

@@ -1,6 +1,6 @@
 {
   "name": "spor",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Puts back what Claude Code folds away: the files Claude read and the commands it searched with, under each folded run, and what each turn did on its closing line",
   "author": {
     "name": "Mark Medum Bundgaard",
@@ -13,6 +13,20 @@
   "documentationUrl": "https://github.com/mmedum/spor#readme",
   "supportUrl": "https://github.com/mmedum/spor/issues",
   "privacyPolicyUrl": "https://github.com/mmedum/spor#privacy",
+  "userConfig": {
+    "namesColor": {
+      "type": "string",
+      "title": "Names color",
+      "description": "The files and commands named under each folded run: a theme role such as inactive (the default, Claude Code's color for hints and timestamps), claude or success; or a color: #7aa2f7, rgb(122,162,247), ansi256(110) or ansi:cyan",
+      "default": "inactive"
+    },
+    "tallyColor": {
+      "type": "string",
+      "title": "Tally color",
+      "description": "What each turn did, under its closing line: a theme role such as inactive (the default, Claude Code's color for hints and timestamps), claude or success; or a color: #7aa2f7, rgb(122,162,247), ansi256(110) or ansi:cyan",
+      "default": "inactive"
+    }
+  },
   "keywords": ["claude-code", "mod", "transcript", "tool-calls", "diff", "tui"],
   "types": "./types/index.d.ts"
 }

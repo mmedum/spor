@@ -33,7 +33,7 @@ npx --yes markdownlint-cli2@0.23.3
 
 ## Code
 
-- Everything that touches `$` lives in `hooks/register.tsx`. The other modules in `hooks/` (`names.ts`, `tally.ts`, `text.ts`) are pure: they take values and return values.
+- Everything that touches `$` lives in `hooks/register.tsx`. The other modules in `hooks/` (`names.ts`, `paint.ts`, `tally.ts`, `text.ts`) are pure: they take values and return values.
 - Each `$.state` value is declared in `types/index.d.ts`.
 - spor stays quiet: it adds to rows Claude Code already draws and opens no pane, band or toast of its own.
 - spor is written in lowercase, always, also at the start of a sentence. Write American English.

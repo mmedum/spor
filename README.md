@@ -10,7 +10,7 @@ Claude Code folds runs of reads and searches into one count line, like `Read 3 f
 
 ![The same turn in Claude Code twice. Without spor, the folded line says only "Searched for 1 pattern, read 1 file". With spor, a dim line under it names the search command and the file, and a dim line under the turn's closing line says "changed src/config.ts (+1 −1) · read 1 · ran 1".](docs/screenshot.png)
 
-Nothing else changes. There's no pane, no band and no setting, ctrl+o still shows every call in full, and `/spor off` hides spor's lines whenever you want Claude Code's own view.
+Nothing else changes. There's no pane and no band, ctrl+o still shows every call in full, and `/spor off` hides spor's lines whenever you want Claude Code's own view.
 
 ## Install
 
@@ -26,6 +26,7 @@ Third-party marketplaces don't update on their own. To update, run `claude plugi
 
 - **Under a folded run:** each file read, as a path relative to the session's folder; each shell command by its first line, past any blank lines and comments before it (a heredoc's body is left out, marked `…`); a fetched address, a web search's question, or any other call by its tool. Each name shows once, in the order Claude first used it, and one that failed every time is marked `✗`. Names are never shortened: when they don't fit on one line, they wrap onto more dim lines, and a name wider than a line breaks at a space or after a slash. A long run shows three lines of names, then a line of its own, `… +N more (ctrl+o to expand)`, with N the names left out, as Claude Code itself folds long output; when one more line would show them all, it shows them all, and its first name always shows whole, however many lines it takes. ctrl+o is Claude Code's default key; a mod can't read a rebound one.
 - **Under a turn's closing line:** the files the turn changed, by name, with the lines added and removed, then how many files it read and how many shell commands it ran. Only the main conversation counts; a subagent's calls belong to its own transcript. An edit held for review, a refused call and a failed one aren't counted. A turn that touched nothing gets no line. A turn that changed many files is capped like the names, its last line carrying the rest, as in `… +3 more (+16 −8) · read 2 · ran 1`; the counts always show.
+- **In your theme's color:** by default spor's lines take Claude Code's own color for hints and timestamps, the `inactive` role, so they follow `/theme`, light or dark. In `/config` or with `/plugin configure spor@spor`, two options take another role, such as `claude` or `success`, or a color: `#7aa2f7`, `rgb(122,162,247)`, `ansi256(110)` or `ansi:cyan`. Names color paints the lines under a folded run, `✗` marks and all, and Tally color the lines under a turn's closing line. A value spor can't read leaves the default. To restyle quiet text all over Claude Code, override `inactive` in a [custom theme](https://code.claude.com/docs/en/terminal-config#create-a-custom-theme) instead; a hex or `rgb()` color stays the same in light and dark, while `ansi256()` and `ansi:` colors follow your terminal's own palette.
 
 The tallies cover the turns of this session since spor loaded. After `/clear` or `/resume`, older turns' closing lines show as Claude Code draws them.
 
@@ -51,7 +52,7 @@ Mods run with your permissions, so here is everything spor touches. `claude plug
 
 - The main conversation's tool calls as they finish, through the mod API: the tool, its input and its result.
 - The session's folder (`$.session.cwd`), to write paths relative to it.
-- What you type after `/spor`.
+- What you type after `/spor`, and the Names color and Tally color options.
 - The kind and id of each row added to the conversation, to find the one that closes a turn and put the turn's tally under it. spor never reads a row's content.
 
 ### What it runs and writes
