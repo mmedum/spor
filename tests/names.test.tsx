@@ -1,3 +1,4 @@
+import type { ToolGroupCall } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
 import { call, engine, group, lines } from './kit'
 
@@ -18,6 +19,42 @@ describe('folded runs', () => {
     const ui = await group($, [call('Read', { file_path: '/home/demo/app/src/api.ts' })], { isExpanded: true })
 
     expect(await lines(ui)).toEqual(['Read 1 files'])
+  })
+
+  // An escaped bug: under a live run Claude Code shows its latest call, as
+  // `⎿  $ cd ~/src/app && python3 - <<'EOF'`, and spor's line said it again.
+  test('leaves a live run in the terminal to Claude Code, which shows its latest call under its own line, for one call and for several', async ($, on) => {
+    engine(on)
+    const rows: [ToolGroupCall[], string][] = [
+      [[call('Bash', { command: "cd ~/src/app && python3 - <<'EOF'\nimport re\nEOF" })], 'Read 1 files'],
+      [[call('Read', { file_path: '/home/demo/app/src/api.ts' }), call('Bash', { command: 'npm test' })], 'Read 2 files'],
+    ]
+    for (const [calls, own] of rows) {
+      const ui = await group($, calls, { isActive: true })
+      expect(await lines(ui)).toEqual([own])
+      await ui.unmount()
+    }
+  })
+
+  test('names every call of a live run once it settles', async ($, on) => {
+    engine(on)
+    const calls = [call('Read', { file_path: '/home/demo/app/src/api.ts' }), call('Bash', { command: 'npm test' })]
+    const ui = await group($, calls, { isActive: true })
+    await ui.redraw({ calls, isActive: false, isExpanded: false })
+
+    expect(await lines(ui)).toEqual(['Read 2 files', '  ⎿  src/api.ts · npm test'])
+  })
+
+  test('names every call of a live run on the other surfaces, where Claude Code shows none under its line', async ($, on) => {
+    engine(on)
+    for (const surface of ['desktop', 'vscode', 'mobile'] as const) {
+      const ui = await group($, [call('Read', { file_path: '/home/demo/app/src/api.ts' }), call('Bash', { command: 'npm test' })], {
+        isActive: true,
+        surface,
+      })
+      expect(await lines(ui)).toEqual(['Read 2 files', '  ⎿  src/api.ts · npm test'])
+      await ui.unmount()
+    }
   })
 
   test('names each file once, marks one that never read, and writes a path outside the folder whole', async ($, on) => {

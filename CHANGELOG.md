@@ -4,6 +4,12 @@ Notable changes to spor. The format follows [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-10-11
+
+### Fixed
+
+- While a folded run is still going, Claude Code shows its latest call under its own line, as in `⎿  $ npm test`, and spor's line named that call a second time. Now, while a run is going in the terminal, spor leaves it to Claude Code, and spor's line, with every name, appears once the run ends.
+
 ## [0.2.1] - 2026-10-11
 
 ### Fixed
@@ -37,7 +43,8 @@ Notable changes to spor. The format follows [Keep a Changelog](https://keepachan
 - Under each turn's closing line, what the turn did: the files it changed, by name, with the lines added and removed, and how many files it read and commands it ran, capped the same way.
 - `/spor` says whether spor's lines are on. `/spor off` hides them, those already drawn too, and `/spor on` shows them again; the switch lasts for the session.
 
-[Unreleased]: https://github.com/mmedum/spor/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/mmedum/spor/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/mmedum/spor/releases/tag/v0.2.2
 [0.2.1]: https://github.com/mmedum/spor/releases/tag/v0.2.1
 [0.2.0]: https://github.com/mmedum/spor/releases/tag/v0.2.0
 [0.1.1]: https://github.com/mmedum/spor/releases/tag/v0.1.1

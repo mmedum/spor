@@ -104,9 +104,15 @@ export const register: Register = (on, options) => {
   // A folded run: Claude Code's own line, and under it the names it stands
   // for, a long run capped at a few lines. Unfolded (ctrl+o, --verbose),
   // each call shows its own row.
+  //
+  // While a run is live, Claude Code's terminal shows its latest call under
+  // its own line, and a mod can't see which, so spor leaves the run to it
+  // and names every call once the run settles. Should Claude Code drop that
+  // live line, or move it out of this row, spor can name calls live again;
+  // should the desktop gain one, the surface check goes.
   on('ui.render', { component: 'ToolGroup' }, async ($, e, next) => {
     const drawn = await next(e)
-    if (e.props.isExpanded || !(await read($, isShown))) {
+    if (e.props.isExpanded || (e.surface === 'terminal' && e.props.isActive) || !(await read($, isShown))) {
       return drawn
     }
     const names = namesOf(e.props.calls, await $.session.cwd().catch(() => ''))

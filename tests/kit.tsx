@@ -1,7 +1,7 @@
 // What the test files share: Claude Code's side beneath spor, and the rows
 // it asks spor to draw.
 
-import type { On, ToolGroupCall } from 'claude-code'
+import type { On, RenderSurface, ToolGroupCall } from 'claude-code'
 import type { ElementQuery, Engine, FoundElement } from 'claude-code/testing'
 
 export const FOLDER = '/home/demo/app'
@@ -25,14 +25,24 @@ export function call(tool: string, input: Record<string, unknown>, { isErrored =
   return { tool, input, isRunning: false, isErrored, isInterrupted: false }
 }
 
-// A folded run (or one ctrl+o unfolded) as the transcript asks for it, in a
-// terminal `columns` wide.
-export function group($: Engine, calls: ToolGroupCall[], { isExpanded = false, columns = 120 } = {}) {
+// A folded run (or one ctrl+o unfolded) as the transcript asks for it, on a
+// surface `columns` wide, the terminal unless said; live while its calls run
+// and the model may add more.
+export function group(
+  $: Engine,
+  calls: ToolGroupCall[],
+  {
+    isActive = false,
+    isExpanded = false,
+    columns = 120,
+    surface = 'terminal',
+  }: { isActive?: boolean; isExpanded?: boolean; columns?: number; surface?: RenderSurface } = {},
+) {
   return $.ui.mount({
     plugin: 'spor',
-    surface: 'terminal',
+    surface,
     component: 'ToolGroup',
-    props: { calls, isActive: false, isExpanded },
+    props: { calls, isActive, isExpanded },
     viewport: { columns, rows: 40 },
   })
 }
